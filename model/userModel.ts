@@ -1,19 +1,5 @@
 import * as mysql from "mysql";
-const connection = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "nitya_23",
-  database: "mydb",
-});
-
-connection.connect((err: mysql.MysqlError) => {
-  if (err) {
-    console.error("Error connecting to MySQL:", err);
-    return;
-  }
-  console.log("Connected to MySQL of User!");
-});
-
+import connection from "./connection";
 class userModel {
   static registerUser(
     name: string,
@@ -32,8 +18,7 @@ class userModel {
     password: string,
     callback: mysql.queryCallback
   ) {
-    const sql =
-      "SELECT * FROM users WHERE (username=? OR phone=?)";
+    const sql = "SELECT * FROM users WHERE (username=? OR phone=?)";
     connection.query(sql, [username, username], (err, results) => {
       if (err) {
         callback(err, null);
@@ -58,6 +43,23 @@ class userModel {
     const sql = "SELECT * FROM users WHERE username=?";
     connection.query(sql, [username], callback);
   }
+  static updateUserName(
+    username: string,
+    newName: string,
+    callback: mysql.queryCallback
+  ) {
+    const sql = "UPDATE users SET name=? WHERE (username=? OR phone=?)";
+    connection.query(sql, [newName, username, username], callback);
+  }
+  static updateAddress(
+    username: string,
+    address: string,
+    callback: mysql.queryCallback
+  ) {
+    const sql = "UPDATE users SET address=? WHERE (username=? OR phone=?)";
+    connection.query(sql, [address, username, username], callback);
+  }
+ 
 }
 
 export default userModel;
