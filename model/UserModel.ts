@@ -1,6 +1,6 @@
 import * as mysql from "mysql";
 import connection from "./connection";
-class userModel {
+class UserModel {
   static registerUser(
     name: string,
     address: string,
@@ -59,7 +59,24 @@ class userModel {
     const sql = "UPDATE users SET address=? WHERE (username=? OR phone=?)";
     connection.query(sql, [address, username, username], callback);
   }
- 
+  static updateUserProfileImage(
+    username: string,
+    imageUrl: string,
+    callback: mysql.queryCallback
+  ) {
+   
+    const sql = "UPDATE users SET imageUrl=? WHERE (username=? OR phone=?)";
+    connection.query(sql, [imageUrl, username, username], callback);
+  }
+  static updateUserFileUrls(
+    username: string,
+    fileUrls: string[],
+    callback: mysql.queryCallback
+  ) {
+    const sql = "UPDATE users SET fileUrls=? WHERE (username=? OR phone=?)";
+    connection.query(sql, [JSON.stringify(fileUrls), username, username], callback);
+  }
+  
 }
 
-export default userModel;
+export default UserModel;

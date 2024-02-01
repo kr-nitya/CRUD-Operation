@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { ExtendedRequest } from "../controller/userController";
+import { ExtendedRequest } from "../controller/UserController";
 import dotenv from 'dotenv';
 dotenv.config();
 export function verifyToken(req: Request, res: Response, next: NextFunction) {
