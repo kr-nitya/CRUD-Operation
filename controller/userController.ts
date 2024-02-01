@@ -1,12 +1,16 @@
 import userModel from "../model/userModel";
 import { Request, Response } from "express";
-import { encryptPassword } from "../encryption";
+import { encryptPassword } from "../utility/encryption";
 import jwt from "jsonwebtoken";
-
-interface ExtendedRequest extends Request {
-  decoded?: { username?: string };
+import dotenv from 'dotenv';
+import cloudinary from 'cloudinary';
+import fs from 'fs';
+import { Multer } from "multer";
+dotenv.config();
+export interface ExtendedRequest extends Request {
+  decodedUsername?: string;
+  file?: Express.Multer.File; // Use Express.Multer.File instead of Multer.File
 }
-
 class userController {
   static registerUser(req: Request, res: Response) {
     const { name, address, phone, password, username } = req.body;
@@ -24,6 +28,15 @@ class userController {
       (err: any, result: any) => {
         if (err) {
           console.error("Error in Registration:", err);
+           // Check for duplicate entry error (ER_DUP_ENTRY)
+           if (err.code === 'ER_DUP_ENTRY') {
+            if (err.message.includes('username')) {
+              return res.status(409).json({ error: "Username already exists" });
+            } else if (err.message.includes('phone')) {
+              return res.status(409).json({ error: "Phone number already exists" });
+            }
+          }
+
           res.status(500).json({ error: "Internal Server Error" });
           return;
         }
@@ -34,7 +47,6 @@ class userController {
       }
     );
   }
-
   static loginUser(req: Request, res: Response) {
     const { username, password } = req.body;
     if (!password || !username) {
@@ -53,7 +65,8 @@ class userController {
         return;
       }
       // Generate JWT token
-      const token = jwt.sign({ username }, "random", {
+      const secretKey = process.env.SECRET_KEY || ''; 
+      const token = jwt.sign({ username }, secretKey, {
         expiresIn: "1h", // Set the expiration time of the token
       });
       res.json({
@@ -62,15 +75,14 @@ class userController {
       });
     });
   }
-
   static getUserDetails(req: ExtendedRequest, res: Response) {
-    const { username } = req.decoded || {};
+    const { decodedUsername } = req;
 
-    if (!username) {
+    if (!decodedUsername) {
       return res.status(401).json({ error: "Unauthorized - Invalid token" });
     }
 
-    userModel.getUserDetails(username, (err, result) => {
+    userModel.getUserDetails(decodedUsername, (err, result) => {
       if (err) {
         console.error("Error fetching user details:", err);
         return res.status(500).json({ error: "Internal Server Error" });
@@ -79,18 +91,60 @@ class userController {
       if (!result || result.length === 0) {
         return res.status(404).json({ error: "User not found" });
       }
-
       const userDetails = {
         name: result[0].name,
         address: result[0].address,
         phone: result[0].phone,
         username: result[0].username,
-        // Add more details as needed
       };
-
       res.json({ message: "User details retrieved successfully", userDetails });
     });
   }
+  static updateUserName(req: ExtendedRequest, res: Response) {
+    const { decodedUsername } = req;
+    const { name } = req.params;
+
+    if (!decodedUsername) {
+      return res.status(401).json({ error: "Unauthorized - Invalid token" });
+    }
+
+    userModel.updateUserName(decodedUsername, name, (err, result) => {
+      if (err) {
+        console.error("Error updating user's name:", err);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ error: "User not found or name not updated" });
+      }
+
+      res.json({ message: "User name updated successfully" });
+    });
+  }
+  static updateAddress(req: ExtendedRequest, res: Response) {
+    const { decodedUsername } = req;
+    const { address } = req.params;
+    if (!decodedUsername) {
+      return res.status(401).json({ error: "Unauthorized - Invalid token" });
+    }
+    userModel.updateAddress(decodedUsername, address, (err, result) => {
+      if (err) {
+        console.error("Error updating user's address:", err);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ error: "User not found or address not updated" });
+      }
+
+      res.json({ message: "address updated successfully" });
+    });
+  }
+ 
 }
 
 export default userController;
