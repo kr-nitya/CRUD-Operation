@@ -155,6 +155,7 @@ class UserController {
     }
 
     try {
+      //_ means no of rows
       const [_, updatedUser] = await User.update(
         { address },
         {
@@ -178,7 +179,6 @@ class UserController {
 
   static async uploadUserImage(req: ExtendedRequest, res: Response) {
     const { decodedUsername, file } = req;
-
     if (!decodedUsername) {
       return res.status(401).json({ error: "Unauthorized - Invalid token" });
     }
@@ -217,7 +217,6 @@ class UserController {
   }
   static async uploadMultipleFiles(req: ExtendedRequest, res: Response) {
     const { decodedUsername, files } = req;
-  
     if (!decodedUsername) {
       return res.status(401).json({ error: "Unauthorized - Invalid token" });
     }
